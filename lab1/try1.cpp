@@ -43,6 +43,8 @@ struct BMPFileHeader {
 struct BMP_transformator {
     BMPFileHeader bmp_file_header;
 
+    // reading the file
+
     unsigned char* read(const char* filename)
     {
         FILE* bytes_img = fopen(filename, "rb");
@@ -83,6 +85,8 @@ struct BMP_transformator {
         }
     }
 
+    // writing the file
+
     unsigned char* write(const char* filename, BMPFileHeader bmp_file_header, unsigned char* data)
     {
 		FILE* write_img = fopen(filename, "wb");
@@ -119,15 +123,19 @@ struct BMP_transformator {
 	}
 
 
+
     unsigned char* turn_left(BMPFileHeader bmp_file_header, unsigned char* data)
 	{
 		int w = bmp_file_header.width;
         int h = bmp_file_header.height;
 
+        //calculating old and  new padding of image
         int old_p = (4 - 3 * w % 4) % 4;
         int new_p = (4 - 3 * h % 4) % 4;
 
         unsigned char* new_data = new unsigned char[(3 * h + new_p) * w];
+
+        //transform image
         int count = 0;
 
         for (int x = 0; x < w; x++)
@@ -150,12 +158,14 @@ struct BMP_transformator {
 		int w = bmp_file_header.width;
         int h = bmp_file_header.height;
 
+        //calculate old and  new padding of image
         int old_p = (4 - 3 * w % 4) % 4;
         int new_p = (4 - 3 * h % 4) % 4;
 
         unsigned char* new_data = new unsigned char[(3 * h + new_p) * w];
         int count = 0;
 
+        //transform image
         for (int x = 0; x < w; x++)
         {
             for (int y = h; y > 0; y--)
@@ -180,6 +190,7 @@ struct BMP_transformator {
         double kernel_sum = 0.0;
         double weight;
 
+        //create gaussian kernel to calculate weights of red green and blue masks of every pixel 
         for (int j=-3; j<4; j++){
             for (int i = -3; i < 4; i++){
                 weight = 1.0 / (2.0 * M_PI * sigma * sigma) * exp(-(i*i + j*j) / (2.0 * sigma * sigma));
@@ -188,7 +199,10 @@ struct BMP_transformator {
             }   
         }
 
+
         unsigned char* new_data = new unsigned char[(3 * bmp_file_header.width + padding) * bmp_file_header.height];
+
+        // calculate the weighted average of the surrounding pixels for each pixel in the picture
         for (int y = 0; y < h; y++){
             for (int x = 0; x < w; x++){
                 double r = 0, g = 0, b = 0;
@@ -200,12 +214,14 @@ struct BMP_transformator {
                             pix_x = x;
                             pix_y = y;
                         }
+                        // calculate summ
                         r += data[3 * (w * pix_y + pix_x) + padding * pix_y] * kernel[i+3][j+3];
                         g += data[3 * (w * pix_y + pix_x) + padding * pix_y + 1] * kernel[i+3][j+3];
                         b += data[3 * (w * pix_y + pix_x) + padding * pix_y + 2] * kernel[i+3][j+3];
 
                         }
                     }
+                //calculate the weighted average and assign it to every pixel in new_data
                 new_data[3 * (w * y + x) + padding * y] = (int) r / kernel_sum;
                 new_data[3 * (w * y + x) + padding * y + 1] = (int) g / kernel_sum;
                 new_data[3 * (w * y + x) + padding * y + 2] = (int) b / kernel_sum;
@@ -220,7 +236,7 @@ int main() {
 	unsigned char* source = image.read("witcher.bmp");
     BMPFileHeader header = image.bmp_file_header;
     std::swap(header.width, header.height);
-    BMPFileHeader swap_header = header;
+    BMPFileHeader swap_header = header; //a new header is needed to create a picture with changed dimensions
     std::swap(header.width, header.height);
 
 	unsigned char* left_data = image.turn_left(header, source);
@@ -240,4 +256,3 @@ int main() {
     delete[] source;
     return 0;
 }
-
