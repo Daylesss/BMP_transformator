@@ -3,8 +3,8 @@
 
 int main() {
 	BMP image = BMP();
-	image.read("witcher.bmp");
-	std::cout << image.bmp_file_header.file_size << " bytes = file size\n";
+	image.read("alchemist.bmp");
+	// std::cout << image.bmp_file_header.file_size << " bytes = file size\n";
 	
 	//Rotating image to the left
 	BMP turned_left = image.turn_left();

@@ -1,9 +1,5 @@
 #pragma once
-#include <iostream>
-#include <fstream>
-#include <cmath>
 #include <cstdint>
-#include <algorithm>
 #pragma pack(push, 1)
 
 struct BMPFileHeader 
@@ -35,32 +31,32 @@ struct BMPFileHeader
 };
 #pragma pack(pop)
 
-struct BMP 
+class BMP 
 {
 	BMPFileHeader bmp_file_header;
 	unsigned char* pixel_data;
+	double * rgb_gauss_sum(int (&xywh)[4], unsigned char *data, int padding, double (&kernel)[7][7]);
 
-	BMP(BMPFileHeader header, unsigned char* data_pixel)
-	{
-		bmp_file_header = header;
-		pixel_data = data_pixel;
-	}
-	BMP() {}
+	public:
+		BMP(BMPFileHeader header, unsigned char* data_pixel)
+		{
+			bmp_file_header = header;
+			pixel_data = data_pixel;
+		}
+		BMP() = default;
 
-	char read(const std::string& filename);
+		char read(const std::string& filename);
 
-	char write(const std::string& filename);
+		char write(const std::string& filename);
 
-	BMP turn_left();
+		BMP turn_left();
 
-	BMP turn_right();
-	
-	BMP gaussian_blur(double sigma);
+		BMP turn_right();
+		
+		BMP gaussian_blur(double sigma);
 
-	~BMP() 
-	{
-		delete[] pixel_data;
-	}
+		~BMP() 
+		{
+			delete[] pixel_data;
+		}
 };
-
-double * rgb_gauss_sum(int x, int y, int w, int h, unsigned char *data, int padding, double (&kernel)[7][7]);

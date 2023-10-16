@@ -1,17 +1,18 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <algorithm>
 #include "bmp.h"
 
 
 char BMP::read(const std::string& filename){
     std::ifstream file(filename, std::ios::binary);
-    if (!file)
+    if (!file.is_open())
     {
         throw std::runtime_error("Failed to open BMP file: " + filename);
     }
 
-    file.read((char*)&bmp_file_header, sizeof(bmp_file_header));
+    file.read(reinterpret_cast<char*>(&bmp_file_header), sizeof(bmp_file_header));
 
     std::cout<<bmp_file_header.size << " size of header\n";
 
@@ -40,11 +41,11 @@ char BMP::read(const std::string& filename){
 
 char BMP::write(const std::string& filename){
     std::ofstream file(filename, std::ios::binary);
-    if (!file)
+    if (!file.is_open())
     {
         throw std::runtime_error("Failed to open BMP file: " + filename);
     }
-    file.write((char*)&bmp_file_header, sizeof(bmp_file_header));
+    file.write(reinterpret_cast<char*>(&bmp_file_header), sizeof(bmp_file_header));
 
     if (file.bad()) {
         throw std::runtime_error("Failed to write header: " + filename);
@@ -126,8 +127,8 @@ BMP BMP::turn_right(){
     {
         for (int y = h; y > 0; y--)
         {
-            int new_data_pos = 3 * count + new_p * (w-x);
-            int old_data_pos = (3 * w + old_p) * h - (y) * (3 * w + old_p) + (3 * x);
+            int new_data_pos = 3 * (count) + new_p * (w-x);
+            int old_data_pos = (3 * w + old_p) * h - (y) * (3 * w + old_p) + (3 * (x-1));
             std::copy_n(pixel_data + old_data_pos, 3, new_data + new_data_pos);
             count++;
         }
@@ -160,34 +161,37 @@ BMP BMP::gaussian_blur(double sigma){
     // calculate the weighted average of the surrounding pixels for each pixel in the picture
     for (int y = 0; y < h; y++){
         for (int x = 0; x < w; x++){
-            double *rgb = rgb_gauss_sum(x, y, w, h, pixel_data, padding, kernel);
+            int xywh[4]={x, y, w, h};
+            double *rgb = rgb_gauss_sum(xywh, pixel_data, padding, kernel);
             new_data[3 * (w * y + x) + padding * y] = (int) rgb[0] / kernel_sum;
             new_data[3 * (w * y + x) + padding * y + 1] = (int) rgb[1] / kernel_sum;
             new_data[3 * (w * y + x) + padding * y + 2] = (int) rgb[2] / kernel_sum;
-            delete[] rgb;
             }
         }
 
     return BMP(bmp_file_header, new_data);
 }
 
-double *rgb_gauss_sum(int x, int y, int w, int h, unsigned char *data, int padding, double (&kernel)[7][7]){
+double *BMP::rgb_gauss_sum(int (&xywh)[4], unsigned char *data, int padding, double (&kernel)[7][7]){
     double r=0, g=0, b=0;
+    double *rgb;
     for (int j = -3; j < 4; j++){
         for (int i = -3; i < 4; i++){
-            int pix_x = x + i;
-            int pix_y = y + j;
-            if ( !((0 <= pix_x) and (pix_x < w) and (0 <= pix_y) and (pix_y < h)) ){
-                pix_x = x;
-                pix_y = y;
+            int pix_x = xywh[0] + i;
+            int pix_y = xywh[1] + j;
+            if ( !((0 <= pix_x) and (pix_x < xywh[2]) and (0 <= pix_y) and (pix_y < xywh[3])) ){
+                pix_x = xywh[0];
+                pix_y = xywh[1];
             }
             // calculate summ
-            r += data[3 * (w * pix_y + pix_x) + padding * pix_y] * kernel[i+3][j+3];
-            g += data[3 * (w * pix_y + pix_x) + padding * pix_y + 1] * kernel[i+3][j+3];
-            b += data[3 * (w * pix_y + pix_x) + padding * pix_y + 2] * kernel[i+3][j+3];
+            r += data[3 * (xywh[2] * pix_y + pix_x) + padding * pix_y] * kernel[i+3][j+3];
+            g += data[3 * (xywh[2] * pix_y + pix_x) + padding * pix_y + 1] * kernel[i+3][j+3];
+            b += data[3 * (xywh[2] * pix_y + pix_x) + padding * pix_y + 2] * kernel[i+3][j+3];
             }
     }
+    rgb[0] = r;
+    rgb[1] = g;
+    rgb[2] = b;
 
-    double *rgb =new double[3]{r ,g ,b};
     return rgb;
 }
