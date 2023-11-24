@@ -79,62 +79,52 @@ BMP BMP::turn_left(){
 
     BMPFileHeader header = bmp_file_header;
 
+    std::swap(header.width, header.height);
     int w = header.width;
     int h = header.height;
 
     //calculating old and  new padding of image
-    int old_p = (4 - 3 * w % 4) % 4;
-    int new_p = (4 - 3 * h % 4) % 4;
+    int new_p = (4 - 3 * w % 4) % 4;
+    int old_p = (4 - 3 * h % 4) % 4;
 
-    unsigned char* new_data = new unsigned char[(3 * h + new_p) * w];
+    unsigned char* new_data = new unsigned char[(3 * w + new_p) * h];
 
-    //transform image
-    int count = 0;
-
-    for (int x = 0; x < w; x++)
-    {
-        for (int y = 1; y <= h; y++)
-        {
-            int new_data_pos = 3 * count + new_p * x;
-            int old_data_pos = (3 * w + old_p) * h - (y) * (3*w+old_p) + (3 * x);
-            std::copy_n(pixel_data + old_data_pos, 3, new_data + new_data_pos);
-            count++;
-        }
-    }
-
-    std::swap(header.width, header.height);
-    return BMP(header, new_data);
-
+    for (int y = 0; y < h; y++)
+	{
+		for (int x = 0; x < w; x++)
+		{
+			int pos_from = ((w - 1 - x) * h + y) * 3 + (w - 1 - x) * old_p;
+			int pos_to = (y * w + x) * 3 + y * new_p;
+			std::copy_n(pixel_data + pos_from, 3, new_data + pos_to);
+		}
+	}
+	return BMP(header, new_data);
 }
 
 
 BMP BMP::turn_right(){
     BMPFileHeader header = bmp_file_header;
 
-
+    std::swap(header.width, header.height);
     int w = header.width;
     int h = header.height;
 
-    //calculate old and new padding of image
-    int old_p = (4 - 3 * w % 4) % 4;
-    int new_p = (4 - 3 * h % 4) % 4;
+    //calculating old and  new padding of image
+    int new_p = (4 - 3 * w % 4) % 4;
+    int old_p = (4 - 3 * h % 4) % 4;
 
-    unsigned char* new_data = new unsigned char[(3 * h + new_p) * w];
-    int count = 0;
+    unsigned char* new_data = new unsigned char[(3 * w + new_p) * h];
 
-    //transform image
-    for (int x = w; x > 0; x--)
-    {
-        for (int y = h; y > 0; y--)
-        {
-            int new_data_pos = 3 * (count) + new_p * (w-x);
-            int old_data_pos = (3 * w + old_p) * h - (y) * (3 * w + old_p) + (3 * (x-1));
-            std::copy_n(pixel_data + old_data_pos, 3, new_data + new_data_pos);
-            count++;
-        }
-    }
-    std::swap(header.width, header.height);
-    return BMP(header, new_data);
+for (int y = 0; y < h; y++)
+	{
+		for (int x = 0; x < w; x++)
+		{
+			int pos_from = (x * h + h - 1 - y) * 3 + x * old_p;
+			int pos_to = (y * w + x) * 3 + y * new_p;
+			std::copy_n(pixel_data + pos_from, 3, new_data + pos_to);
+		}
+	}
+	return BMP(header, new_data);
 }
 
 BMP BMP::gaussian_blur(double sigma){
