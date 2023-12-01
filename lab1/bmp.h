@@ -35,12 +35,14 @@ class BMP
 {
 	BMPFileHeader bmp_file_header;
 	unsigned char* pixel_data;
+	unsigned char* xui;
 	double * rgb_gauss_sum(int (&xywh)[4], unsigned char *data, int padding, double (&kernel)[7][7]);
 
 	public:
-		BMP(BMPFileHeader header, unsigned char* data_pixel)
+		BMP(BMPFileHeader header,unsigned char* data_xui ,unsigned char* data_pixel)
 		{
 			bmp_file_header = header;
+			xui = data_xui;
 			pixel_data = data_pixel;
 		}
 		BMP() = default;

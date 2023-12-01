@@ -18,8 +18,10 @@ char BMP::read(const std::string& filename){
 
     int all_bytes = bmp_file_header.file_size - bmp_file_header.offset_data;
 
+    unsigned char* xui_data = new unsigned char[bmp_file_header.offset_data - sizeof(bmp_file_header)];
     unsigned char* new_data = new unsigned char[all_bytes];
 
+    file.read(reinterpret_cast<char*>(xui_data), (bmp_file_header.offset_data - sizeof(bmp_file_header)));
     file.read(reinterpret_cast<char*>(new_data), all_bytes);
 
     if (file.bad()) {
@@ -35,7 +37,9 @@ char BMP::read(const std::string& filename){
     }
 
     file.close();
+    BMP::xui = xui_data;
     BMP::pixel_data = new_data;
+
     return 0;
 }
 
@@ -50,6 +54,18 @@ char BMP::write(const std::string& filename){
     if (file.bad()) {
         throw std::runtime_error("Failed to write header: " + filename);
         return 0;
+    }
+
+    if (!file.eof() && file.fail()) {
+        throw std::runtime_error("data format error: " + filename);
+        return 0;
+    }
+
+    file.write(reinterpret_cast<char*>(xui), bmp_file_header.offset_data - sizeof(bmp_file_header));
+
+    if (file.bad()) {
+    throw std::runtime_error("Failed to write xui: " + filename);
+    return 0;
     }
 
     if (!file.eof() && file.fail()) {
@@ -98,7 +114,7 @@ BMP BMP::turn_left(){
 			std::copy_n(pixel_data + pos_from, 3, new_data + pos_to);
 		}
 	}
-	return BMP(header, new_data);
+	return BMP(header, xui, new_data);
 }
 
 
@@ -124,7 +140,7 @@ for (int y = 0; y < h; y++)
 			std::copy_n(pixel_data + pos_from, 3, new_data + pos_to);
 		}
 	}
-	return BMP(header, new_data);
+	return BMP(header, xui, new_data);
 }
 
 BMP BMP::gaussian_blur(double sigma){
@@ -159,7 +175,7 @@ BMP BMP::gaussian_blur(double sigma){
             }
         }
 
-    return BMP(bmp_file_header, new_data);
+    return BMP(bmp_file_header, xui,  new_data);
 }
 
 double *BMP::rgb_gauss_sum(int (&xywh)[4], unsigned char *data, int padding, double (&kernel)[7][7]){
