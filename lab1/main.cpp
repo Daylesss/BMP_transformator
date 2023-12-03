@@ -3,7 +3,7 @@
 
 int main() {
 	BMP image = BMP();
-	image.read("test1.bmp");
+	image.read("witcher.bmp");
 	
 	//Rotating image to the left
 	BMP turned_left = image.turn_left();
